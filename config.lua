@@ -7,6 +7,11 @@ Config.EnableCooldown = true
 Config.Cooldown = 900 -- 15 mins cooldown by default
 Config.Keybind = 'J'
 
+-- Job Settings
+Config.JobLock = true
+Config.RequiredJob = 'horsetrainer'  -- Change this to your desired job name or identifier
+Config.RequiredItem = 'saddlebag'    -- Change this to the item name or identifier
+
 Config.Blip =
 {
     blipName = 'Sell Wild Horse',

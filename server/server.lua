@@ -156,58 +156,106 @@ AddEventHandler('rms-wildhorsestable:server:WildHorseStable', function(modelHash
     local Player = RSGCore.Functions.GetPlayer(src)
 
     -- Define the required job and item
-    local requiredJob = "horsetrainer" -- Change this to your desired job name or identifier
-    local requiredItem = "saddlebag" -- Change this to the item name or identifier
+    local - JobLock = Config.JobLock
+    local requiredJob = Config.RequiredJob -- Change this to your desired job name or identifier
+    local requiredItem = Config.RequiredItem -- Change this to the item name or identifier
 
-    -- Check if the player has the required job "horsetrainer"
-    if Player.PlayerData.job.name ~= requiredJob then
-        RSGCore.Functions.Notify(src, 'You need to be a horsetrainer to save a wild horse.', 'error', 3000)
-        return
-    end
-
-    -- Check if the player has the required item "saddlebag" and remove it
-    if Player.Functions.RemoveItem(requiredItem, 1) then
-        -- Check if the provided modelHash exists in the mapping table
-        local modelName = horseModels[modelHash]
-
-        if not modelName then
-            RSGCore.Functions.Notify(src, 'Invalid horse model.', 'error', 3000)
+    if JobLock then
+        -- Check if the player has the required job "horsetrainer"
+        if Player.PlayerData.job.name ~= requiredJob then
+            RSGCore.Functions.Notify(src, 'You need to be a horsetrainer to save a wild horse.', 'error', 3000)
             return
         end
 
-        -- Function to generate a unique horse ID
-        local function GenerateHorseid()
-            local seed = tonumber(tostring(os.time()):reverse():sub(1, 6)) -- Get a 6-digit timestamp-based seed
-            math.randomseed(seed)
-            local randomNum = math.random(10000, 99999)
-            return tostring(seed) .. tostring(randomNum)
+        -- Check if the player has the required item "saddlebag" and remove it
+        if Player.Functions.RemoveItem(requiredItem, 1) then
+            -- Check if the provided modelHash exists in the mapping table
+            local modelName = horseModels[modelHash]
+
+            if not modelName then
+                RSGCore.Functions.Notify(src, 'Invalid horse model.', 'error', 3000)
+                return
+            end
+
+            -- Function to generate a unique horse ID
+            local function GenerateHorseid()
+                local seed = tonumber(tostring(os.time()):reverse():sub(1, 6)) -- Get a 6-digit timestamp-based seed
+                math.randomseed(seed)
+                local randomNum = math.random(10000, 99999)
+                return tostring(seed) .. tostring(randomNum)
+            end
+
+            local horseid = GenerateHorseid()
+
+            -- Insert the wild horse into the 'player_horses' table as a wild horse, you are able to monitor how many horses are caught in the wild.
+            MySQL.Async.insert('INSERT INTO player_horses(citizenid, horseid, name, horse, gender, active, wild) VALUES(@citizenid, @horseid, @name, @horse, @gender, @active, @wild)', {
+                ['@citizenid'] = Player.PlayerData.citizenid,
+                ['@horseid'] = horseid,
+                ['@name'] = horsename,
+                ['@horse'] = modelName, -- Store the model name instead of the hash
+                ['@gender'] = gender,
+                ['@active'] = false,
+                ['@wild'] = true,
+            }, function(inserted)
+                if inserted then
+                    RSGCore.Functions.Notify(src, 'You have successfully saved a wild horse and used your saddle bag.', 'success', 3000)
+                    
+                    -- Trigger the client event to delete the horse entity
+                    TriggerClientEvent('RSGCore:Command:DeleteVehicle', src)
+                
+                else
+                    RSGCore.Functions.Notify(src, 'Failed to save the wild horse. Please try again later.', 'error', 3000)
+                    -- Add code for handling the case where the horse insertion fails, such as returning the item to the player.
+                end
+            end)
+        else
+            RSGCore.Functions.Notify(src, 'You need a saddlebag to save a wild horse.', 'error', 3000)
         end
-
-        local horseid = GenerateHorseid()
-
-		-- Insert the wild horse into the 'player_horses' table as a wild horse, you are able to monitor how many horses are caught in the wild.
-		MySQL.Async.insert('INSERT INTO player_horses(citizenid, horseid, name, horse, gender, active, wild) VALUES(@citizenid, @horseid, @name, @horse, @gender, @active, @wild)', {
-			['@citizenid'] = Player.PlayerData.citizenid,
-			['@horseid'] = horseid,
-			['@name'] = horsename,
-			['@horse'] = modelName, -- Store the model name instead of the hash
-			['@gender'] = gender,
-			['@active'] = false,
-			['@wild'] = true,
-		}, function(inserted)
-			if inserted then
-				RSGCore.Functions.Notify(src, 'You have successfully saved a wild horse and used your saddle bag.', 'success', 3000)
-				
-				-- Trigger the client event to delete the horse entity
-				TriggerClientEvent('RSGCore:Command:DeleteVehicle', src)
-			  
-			else
-				RSGCore.Functions.Notify(src, 'Failed to save the wild horse. Please try again later.', 'error', 3000)
-				-- Add code for handling the case where the horse insertion fails, such as returning the item to the player.
-			end
-		end)
     else
-        RSGCore.Functions.Notify(src, 'You need a saddlebag to save a wild horse.', 'error', 3000)
+        -- Check if the player has the required item "saddlebag" and remove it
+        if Player.Functions.RemoveItem(requiredItem, 1) then
+            -- Check if the provided modelHash exists in the mapping table
+            local modelName = horseModels[modelHash]
+
+            if not modelName then
+                RSGCore.Functions.Notify(src, 'Invalid horse model.', 'error', 3000)
+                return
+            end
+
+            -- Function to generate a unique horse ID
+            local function GenerateHorseid()
+                local seed = tonumber(tostring(os.time()):reverse():sub(1, 6)) -- Get a 6-digit timestamp-based seed
+                math.randomseed(seed)
+                local randomNum = math.random(10000, 99999)
+                return tostring(seed) .. tostring(randomNum)
+            end
+
+            local horseid = GenerateHorseid()
+
+            -- Insert the wild horse into the 'player_horses' table as a wild horse, you are able to monitor how many horses are caught in the wild.
+            MySQL.Async.insert('INSERT INTO player_horses(citizenid, horseid, name, horse, gender, active, wild) VALUES(@citizenid, @horseid, @name, @horse, @gender, @active, @wild)', {
+                ['@citizenid'] = Player.PlayerData.citizenid,
+                ['@horseid'] = horseid,
+                ['@name'] = horsename,
+                ['@horse'] = modelName, -- Store the model name instead of the hash
+                ['@gender'] = gender,
+                ['@active'] = false,
+                ['@wild'] = true,
+            }, function(inserted)
+                if inserted then
+                    RSGCore.Functions.Notify(src, 'You have successfully saved a wild horse and used your saddle bag.', 'success', 3000)
+                    
+                    -- Trigger the client event to delete the horse entity
+                    TriggerClientEvent('RSGCore:Command:DeleteVehicle', src)
+                
+                else
+                    RSGCore.Functions.Notify(src, 'Failed to save the wild horse. Please try again later.', 'error', 3000)
+                    -- Add code for handling the case where the horse insertion fails, such as returning the item to the player.
+                end
+            end)
+        else
+            RSGCore.Functions.Notify(src, 'You need a saddlebag to save a wild horse.', 'error', 3000)
+        end 
     end
 end)
 
